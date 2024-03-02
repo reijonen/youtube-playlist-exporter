@@ -14,12 +14,17 @@ def fetch_api_instances():
 		print(f"Failed to fetch invidious instances: {res.content}")
 		exit(1)
 
+	try:
+		instances = res.json()
+	except:
+		print(f"Failed to fetch invidious instances. JSON error: {res.content}")
+
 	good_instances = []
-	for instance in res.json():
+	for instance in instances:
 		if instance[1]["api"] == False or instance[1]["type"] != "https":
 			continue
 
-		res = requests.get(instance[1]["uri"], params)
+		res = requests.get(instance[1]["uri"])
 		if res.status_code != 200:
 			continue
 
@@ -38,9 +43,10 @@ def save(results, fails):
 		json.dump(results, f)
 
 	if len(fails) > 0:
-		with open("fails.txt", "w") as f:
+		with open("fails.csv", "w") as f:
+			csv_writer = csv.writer(f, dialect="unix")
 			for video_id in fails:
-				f.write(f"{video_id}\n")
+				csv_writer.writerow([video_id])
 
 def csv_to_video_ids(csv_path):
 	with open(csv_path, newline="") as f:
@@ -147,7 +153,7 @@ def from_playlist(api_instances, playlist_url):
 
 def main():
 	parser = ArgumentParser()
-	parser.add_argument("-purl", "--playlist_url", dest="playlist_url")
+	parser.add_argument("-purl", "--playlist-url", dest="playlist_url")
 	parser.add_argument("-csvp", "--csv-path", dest="csv_path")
 	args = parser.parse_args()
 	if args.playlist_url == None and args.csv_path == None:
